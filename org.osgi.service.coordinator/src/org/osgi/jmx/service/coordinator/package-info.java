@@ -15,7 +15,7 @@
  */
 
 /**
- * Coordination Package Version 1.0.
+ * OSGi JMX Coordination Package Version 1.0.
  * 
  * <p>
  * Bundles wishing to use this package must list the package in the
@@ -26,13 +26,13 @@
  * <p>
  * Example import for consumers using the API in this package:
  * <p>
- * {@code  Import-Package: org.osgi.service.coordination; version="[1.0,2.0)"}
+ * {@code  Import-Package: org.osgi.jmx.service.coordination; version="[1.0,2.0)"}
  * <p>
  * Example import for providers implementing the API in this package:
  * <p>
- * {@code  Import-Package: org.osgi.service.coordination; version="[1.0,1.1)"}
+ * {@code  Import-Package: org.osgi.jmx.service.coordination; version="[1.0,1.1)"}
  * 
  * @version $Id$
  */
 
-package org.osgi.service.coordination;
+package org.osgi.jmx.service.coordinator;

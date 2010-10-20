@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.osgi.jmx.service.coordination;
+package org.osgi.jmx.service.coordinator;
 
 import java.io.IOException;
 

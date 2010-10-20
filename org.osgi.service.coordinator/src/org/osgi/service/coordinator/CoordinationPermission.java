@@ -1,4 +1,4 @@
-package org.osgi.service.coordination;
+package org.osgi.service.coordinator;
 
 import java.security.*;
 

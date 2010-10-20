@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.osgi.service.coordination;
+package org.osgi.service.coordinator;
 
 /**
  * A Participant participates in a Coordination.
  * 
  * A Participant can participate in a Coordination by calling
- * {@link Coordinator#participate(Participant)} or
+ * {@link Coordinator#addparticipant(Participant)} or
  * {@link Coordinator#participateOrBegin(Participant)}. After successfully
  * initiating the participation, the Participant is called back when the
  * Coordination is terminated.
