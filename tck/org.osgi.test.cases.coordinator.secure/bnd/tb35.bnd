@@ -1,8 +1,8 @@
 Bundle-Version: 4.2.0
 
-Bundle-SymbolicName: $(p).tb35
+Bundle-SymbolicName: ${p}.tb35
 
--privatepackage	: $(p).tb35
+-privatepackage	: ${p}.tb35
 
 -includeresource = {OSGI-INF/permissions.perm = perms/none.perm}
 
@@ -12,5 +12,5 @@ Import-Package = \
 	org.osgi.service.coordinator,\
 	org.osgi.test.cases.coordinator.secure
 
-Bundle-Activator = $(p).tb35.Activator
+Bundle-Activator = ${p}.tb35.Activator
 
