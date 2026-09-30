@@ -12,7 +12,7 @@
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 	<artifactId>org.osgi.spec.service.coordinator</artifactId>
-	<name>OSGi Specification repo for org.osgi.service.coordinator</name>
+	<name>OSGi Coordinator Service Specification</name>
 
 	<dependencies>
 		<dependency>
