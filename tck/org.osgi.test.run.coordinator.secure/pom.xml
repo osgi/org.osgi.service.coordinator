@@ -32,6 +32,12 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>org.osgi.service.coordinator</artifactId>
+			<version>${revision}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.osgi.tck</groupId>
 			<artifactId>org.osgi.test.cases.coordinator.secure</artifactId>
 			<version>${revision}</version>
