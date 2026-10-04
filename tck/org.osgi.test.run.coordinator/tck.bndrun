@@ -77,6 +77,7 @@ tck.range: ${range;[===,==+);${version_cleanup;${1}}}
 	org.objenesis;version='${tck.range;${objenesis.version}}',\
 	org.opentest4j;version='${tck.range;${opentest4j.version}}',\
 	org.osgi.service.component;version='${tck.range;${org.osgi.service.component.version}}',\
+	org.osgi.service.coordinator;version='${tck.range;${revision}}',\
 	org.osgi.test.assertj.framework;version='${tck.range;${osgi-test.version}}',\
 	org.osgi.test.cases.coordinator;version='${tck.range;${revision}}',\
 	org.osgi.test.common;version='${tck.range;${osgi-test.version}}',\
