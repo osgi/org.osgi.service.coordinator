@@ -17,10 +17,16 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.fail;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.Coordinator;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
 
 /**
  * A coordination's name must follow the Bundle Symbolic Name pattern.
@@ -34,7 +40,10 @@ import org.osgi.test.support.OSGiTestCase;
  * symbolic-name ::= token('.'token)*
  *
  */
-public class CoordNameBSNFormatTest extends OSGiTestCase {
+public class CoordNameBSNFormatTest {
+
+	@InjectBundleContext
+	BundleContext		context;
 	Coordinator coordinator;
 	private ServiceReference<Coordinator> coordinatorReference;
 	
@@ -42,6 +51,7 @@ public class CoordNameBSNFormatTest extends OSGiTestCase {
 	 * Coordinator.begin() should throw an IllegalArgumentException if a
 	 * coordination's name does not follow the Bundle Symbolic Name pattern.
 	 */
+	@Test
 	public void testBadNames() {
 		assertNameBad("#");
 		assertNameBad("01234!6789");
@@ -56,6 +66,7 @@ public class CoordNameBSNFormatTest extends OSGiTestCase {
 	 * Coordinator.begin() should not throw an IllegalArgumentException if a
 	 * coordination's name follows the Bundle Symbolic Name pattern.
 	 */
+	@Test
 	public void testGoodNames() {
 		assertNameGood("0123456789");
 		assertNameGood("abcdefghijklmnopqrstuvwxyz");
@@ -65,13 +76,15 @@ public class CoordNameBSNFormatTest extends OSGiTestCase {
 		assertNameGood("hello_world.goodbye-cruel.world");
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertNameBad(String name) {

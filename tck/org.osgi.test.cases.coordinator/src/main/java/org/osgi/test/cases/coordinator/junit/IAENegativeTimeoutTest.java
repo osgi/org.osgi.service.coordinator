@@ -17,21 +17,31 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.Coordinator;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
 
 /**
  * An IllegalArgumentException must be thrown when a timeout value is negative.
  */
-public class IAENegativeTimeoutTest extends OSGiTestCase {
+public class IAENegativeTimeoutTest {
+
+	@InjectBundleContext
+	BundleContext		context;
 	private Coordinator coordinator;
 	private ServiceReference<Coordinator> coordinatorReference;
 	
 	/**
 	 * Beginning a coordination.
 	 */
+	@Test
 	public void testBeginCoordination() {
 		IllegalArgumentException iae = null;
 		try {
@@ -47,6 +57,7 @@ public class IAENegativeTimeoutTest extends OSGiTestCase {
 	/**
 	 * Creating a coordination.
 	 */
+	@Test
 	public void testCreateCoordination() {
 		IllegalArgumentException iae = null;
 		try {
@@ -62,6 +73,7 @@ public class IAENegativeTimeoutTest extends OSGiTestCase {
 	/**
 	 * Extending a timeout.
 	 */
+	@Test
 	public void testCoordinationFail() {
 		IllegalArgumentException iae = null;
 		Coordination c = coordinator.create("c", 30000);
@@ -82,6 +94,7 @@ public class IAENegativeTimeoutTest extends OSGiTestCase {
 	 * 
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testCoordinationJoin() throws InterruptedException {
 		IllegalArgumentException iae = null;
 		Coordination c = coordinator.create("c", 2000);
@@ -97,16 +110,18 @@ public class IAENegativeTimeoutTest extends OSGiTestCase {
 		assertIllegalArgumentException(iae);
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertIllegalArgumentException(IllegalArgumentException e) {
-		assertNotNull("An IllegalArgumentException must be thrown if a negative timeout is provided", e);
+		assertThat(e).as("An IllegalArgumentException must be thrown if a negative timeout is provided").isNotNull();
 	}
 }

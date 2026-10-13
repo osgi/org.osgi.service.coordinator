@@ -17,16 +17,30 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Coordinator;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
+import org.osgi.test.common.annotation.InjectBundleInstaller;
+import org.osgi.test.common.install.BundleInstaller;
 
 /**
  *	Contains utilities used by other tests.
  */
-public abstract class CoordinatorTest extends OSGiTestCase {
+public abstract class CoordinatorTest {
+
+	@InjectBundleContext
+	BundleContext		context;
+
+	@InjectBundleInstaller
+	protected BundleInstaller	installer;
 	/**
 	 * The Coordinator service.
 	 */
@@ -44,7 +58,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param c The Coordination whose stack will be used.
 	 */
 	protected void assertAtTopOfStack(Coordination c) {
-		assertEquals("The coordination must be at the top of the thread local stack.", c, coordinator.peek());
+		assertThat(coordinator.peek()).as("The coordination must be at the top of the thread local stack.").isEqualTo(c);
 	}
 	
 	/**
@@ -52,7 +66,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param t The CoordinationException that occurred.
 	 */
 	protected void assertCoordinationException(Throwable t) {
-		assertTrue("Not a CoordinationException.", t instanceof CoordinationException);
+		assertThat(t instanceof CoordinationException).as("Not a CoordinationException.").isTrue();
 	}
 	
 	/**
@@ -61,7 +75,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param expectedCause The expected cause of the CoordinationException.
 	 */
 	protected void assertCoordinationExceptionCause(CoordinationException e, Throwable expectedCause) {
-		assertEquals("The CoordinationException cause was incorrect", expectedCause, e.getCause());
+		assertThat(e.getCause()).as("The CoordinationException cause was incorrect").isEqualTo(expectedCause);
 	}
 	
 	/**
@@ -70,7 +84,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param expectedType The expected type of CoordinationException.
 	 */
 	protected void assertCoordinationExceptionType(CoordinationException e, int expectedType) {
-		assertEquals("The CoordinationException type was incorrect.", expectedType, e.getType());
+		assertThat(e.getType()).as("The CoordinationException type was incorrect.").isEqualTo(expectedType);
 	}
 	
 	/**
@@ -100,7 +114,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * Ensures the current thread's local stack is empty.
 	 */
 	protected void assertEmptyStack() {
-		assertNull("The thread local stack must be empty.", coordinator.peek());
+		assertThat(coordinator.peek()).as("The thread local stack must be empty.").isNull();
 	}
 	
 	/**
@@ -145,7 +159,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 			fail("Ending the coordination must result in a CoordinationException.");
 		}
 		catch (CoordinationException e) {
-			assertEquals("The CoordinationException type was incorrect.", expectedType, e.getType());
+			assertThat(e.getType()).as("The CoordinationException type was incorrect.").isEqualTo(expectedType);
 		}
 	}
 	
@@ -168,7 +182,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param expectedFailure The expected failure.
 	 */
 	protected void assertFailure(Coordination c, Throwable expectedFailure) {
-		assertEquals("The failure cause was incorrect.", expectedFailure, c.getFailure());
+		assertThat(c.getFailure()).as("The failure cause was incorrect.").isEqualTo(expectedFailure);
 	}
 	
 	/**
@@ -176,7 +190,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param c The Coordination that should not be terminated.
 	 */
 	protected void assertNotTerminated(Coordination c) {
-		assertFalse("The coordination should not be terminated.", c.isTerminated());
+		assertThat(c.isTerminated()).as("The coordination should not be terminated.").isFalse();
 	}
 
 	/**
@@ -188,8 +202,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 */
 	protected void assertEnclosingCoordination(Coordination c,
 			Coordination expectedEnclosing) {
-		assertEquals("The parent coordination was incorrect.",
-				expectedEnclosing, c.getEnclosingCoordination());
+		assertThat(c.getEnclosingCoordination()).as("The parent coordination was incorrect.").isEqualTo(expectedEnclosing);
 	}
 	
 	/**
@@ -197,7 +210,7 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param c The Coordination that should be terminated.
 	 */
 	protected void assertTerminated(Coordination c) {
-		assertTrue("The coordination must be terminated.", c.isTerminated());
+		assertThat(c.isTerminated()).as("The coordination must be terminated.").isTrue();
 	}
 	
 	/**
@@ -242,9 +255,9 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 		String message = "Wrong deadline";
 		long deadline = c.extendTimeout(0);
 		if (timeout == 0)
-			assertEquals(message, 0, deadline);
+			assertThat(deadline).as(message).isZero();
 		else
-			assertTrue(message, deadline >= start + timeout);
+			assertThat(deadline >= start + timeout).as(message).isTrue();
 	}
 
 	/**
@@ -254,22 +267,24 @@ public abstract class CoordinatorTest extends OSGiTestCase {
 	 * @param timeout The total amount of timeout requested.
 	 */
 	protected void assertTimeoutDuration(long start, long timeout) {
-		assertTrue("Timeout too long", System.currentTimeMillis() - start <= timeout + 500);
+		assertThat(System.currentTimeMillis() - start <= timeout + 500).as("Timeout too long").isTrue();
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 		peeked = coordinator.peek();
 	}
 	
-	protected void tearDown() throws Exception {
+	@AfterEach
+	public void tearDown() throws Exception {
 		// Clean up any coordinations that might be lingering on the thread 
 		// local stack.
 		while (coordinator.peek() != null && !coordinator.peek().equals(peeked))
 			coordinator.pop();
 		coordinator = null;
-		getContext().ungetService(coordinatorReference);
+		context.ungetService(coordinatorReference);
 		coordinatorReference = null;
 	}
 }

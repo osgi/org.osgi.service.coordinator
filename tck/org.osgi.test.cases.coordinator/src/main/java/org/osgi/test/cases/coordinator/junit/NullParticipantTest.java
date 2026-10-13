@@ -17,6 +17,10 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.fail;
+
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 
 /**
@@ -27,14 +31,10 @@ public class NullParticipantTest extends CoordinatorTest {
 	/**
 	 * The basic test.
 	 */
+	@Test
 	public void testBasic() {
 		Coordination c = coordinator.create("c", 0);
-		try {
-			c.addParticipant(null);
-			fail("A runtime exception was not thrown in response to a null participant.");
-		}
-		catch (RuntimeException e) {
-			// Okay.
-		}
+		assertThatExceptionOfType(RuntimeException.class).as("A runtime exception was not thrown in response to a null participant.")
+				.isThrownBy(() -> c.addParticipant(null));
 	}
 }

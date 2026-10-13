@@ -17,6 +17,11 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.secure.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -25,12 +30,20 @@ import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Coordinator;
 import org.osgi.test.cases.coordinator.secure.TestClassResult;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
+import org.osgi.test.common.annotation.InjectBundleInstaller;
+import org.osgi.test.common.install.BundleInstaller;
 
 /**
  * Basic Coordinator secure test case.
  */
-public class CoordinatorSecureTests extends OSGiTestCase {
+public class CoordinatorSecureTests {
+
+	@InjectBundleContext
+	BundleContext		context;
+
+	@InjectBundleInstaller
+	BundleInstaller		installer;
 	private Coordinator coordinator;
 	private ServiceReference<Coordinator>	coordinatorReference;
 	
@@ -39,6 +52,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationAddParticipantFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb19.jar");
 	}
@@ -48,6 +62,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationAddParticipantSucceedPartcipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb20.jar");
 	}
@@ -57,6 +72,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationEndFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb13.jar");
 	}
@@ -66,6 +82,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationEndSucceedInitiate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb14.jar");;
 	}
@@ -75,6 +92,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationExtendTimeoutFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb25.jar", 10000);
 	}
@@ -84,6 +102,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationExtendTimeoutSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb26.jar", 10000);
 	}
@@ -93,6 +112,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationFailFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb15.jar");
 	}
@@ -102,6 +122,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationFailSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb16.jar");
 	}
@@ -111,6 +132,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetBundleFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb33.jar");
 	}
@@ -120,6 +142,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetBundleSucceedAdmin() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb34.jar");
 	}
@@ -129,6 +152,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetEnclosingCoordinationFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb35.jar");
 	}
@@ -138,6 +162,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetEnclosingCoordinationSucceedAdmin() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb36.jar");
 	}
@@ -147,6 +172,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetFailureFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb17.jar");
 	}
@@ -156,6 +182,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetFailureSucceedInitiate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb18.jar");
 	}
@@ -165,6 +192,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetParticipantsFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb21.jar");
 	}
@@ -174,6 +202,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetParticipantsSucceedInitiate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb22.jar");
 	}
@@ -183,6 +212,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetThreadFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb31.jar");
 	}
@@ -192,6 +222,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetThreadSucceedAdmin() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb32.jar");
 	}
@@ -201,6 +232,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetVariablesFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb23.jar");
 	}
@@ -210,6 +242,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationGetVariablesSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb24.jar");
 	}
@@ -219,6 +252,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationJoinFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb27.jar");
 	}
@@ -228,6 +262,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationJoinSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb28.jar");
 	}
@@ -237,6 +272,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationPushFailNone() throws Exception {
 		assertSecurityExceptionWithDirectCoordination("tb29.jar");
 	}
@@ -246,6 +282,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinationPushSucceedInitiate() throws Exception {
 		assertNotSecurityExceptionWithDirectCoordination("tb30.jar");
 	}
@@ -255,6 +292,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorAddParticipantFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb9.jar");
 	}
@@ -264,6 +302,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorAddParticipantSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb10.jar");
 	}
@@ -273,6 +312,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorBeginFailNone() throws Exception {
 		assertSecurityException("tb4.jar");
 	}
@@ -282,6 +322,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorBeginSucceedInitiate() throws Exception {
 		assertNotSecurityException("tb3.jar");
 	}
@@ -291,6 +332,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorCreateFailNone() throws Exception {
 		assertSecurityException("tb2.jar");
 	}
@@ -300,6 +342,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorCreateSucceedInitiate() throws Exception {
 		assertNotSecurityException("tb1.jar");
 	}
@@ -309,6 +352,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorFailFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb8.jar");
 	}
@@ -318,6 +362,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has PARTICIPATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorFailSucceedParticipate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb7.jar");;
 	}
@@ -328,9 +373,10 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * coordination.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorGetCoordination() throws Exception {
-		BundleContext bc = getContext();
-		Bundle b = install("tb12.jar");
+		BundleContext bc = context;
+		Bundle b = installer.installBundle("tb12.jar", false);
 		Coordination c1 = coordinator.create("com.acme.1", 0);
 		Coordination c2 = null;
 		ServiceRegistration<Coordination> c1sr = null;
@@ -338,15 +384,15 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 		ServiceReference<TestClassResult> sr = null;
 		try {
 			c2 = coordinator.create("com.ibm.2", 0);
-			assertEquals("The coordination was not the expected one.", c1, coordinator.getCoordination(c1.getId()));
-			assertEquals("The coordination was not the expected one.", c2, coordinator.getCoordination(c2.getId()));
+			assertThat(coordinator.getCoordination(c1.getId())).as("The coordination was not the expected one.").isEqualTo(c1);
+			assertThat(coordinator.getCoordination(c2.getId())).as("The coordination was not the expected one.").isEqualTo(c2);
 			c1sr = bc.registerService(Coordination.class, c1, null);
 			c2sr = bc.registerService(Coordination.class, c2, null);
 			b.start();
 			sr = bc.getServiceReference(TestClassResult.class);
-			assertNotNull("The test bundle did not register a result.", sr);
+			assertThat(sr).as("The test bundle did not register a result.").isNotNull();
 			TestClassResult tr = bc.getService(sr);
-			assertTrue("The coordinator should only return coordinations for which the caller has permissions.", tr.succeeded());
+			assertThat(tr.succeeded()).as("The coordinator should only return coordinations for which the caller has permissions.").isTrue();
 		}
 		finally {
 			ungetQuietly(sr);
@@ -363,20 +409,21 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * which the caller does not have ADMIN permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorGetCoordinations() throws Exception {
-		BundleContext bc = getContext();
-		Bundle b = install("tb11.jar");
+		BundleContext bc = context;
+		Bundle b = installer.installBundle("tb11.jar", false);
 		Coordination c1 = coordinator.create("com.acme.1", 0);
 		Coordination c2 = null;
 		ServiceReference<TestClassResult> sr = null;
 		try {
 			c2 = coordinator.create("com.ibm.2", 0);
-			assertEquals("The coordinator did not return the correct number of coordinations.", 2, coordinator.getCoordinations().size());
+			assertThat(coordinator.getCoordinations()).as("The coordinator did not return the correct number of coordinations.").hasSize(2);
 			b.start();
 			sr = bc.getServiceReference(TestClassResult.class);
-			assertNotNull("The test bundle did not register a result.", sr);
+			assertThat(sr).as("The test bundle did not register a result.").isNotNull();
 			TestClassResult tr = bc.getService(sr);
-			assertTrue("The coordinator should only return coordinations for which the caller has permissions.", tr.succeeded());
+			assertThat(tr.succeeded()).as("The coordinator should only return coordinations for which the caller has permissions.").isTrue();
 		}
 		finally {
 			ungetQuietly(sr);
@@ -391,6 +438,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * if the caller does not have INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorPopFailNone() throws Exception {
 		assertSecurityExceptionWithThreadCoordination("tb6.jar");
 	}
@@ -400,18 +448,21 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	 * SecurityException if the caller has INITIATE permission.
 	 * @throws Exception
 	 */
+	@Test
 	public void testCoordinatorPopSucceedInitiate() throws Exception {
 		assertNotSecurityExceptionWithThreadCoordination("tb5.jar");
 	}
 	
-	protected void setUp() throws Exception {
-		BundleContext bc = getContext();
+	@BeforeEach
+	public void setUp() throws Exception {
+		BundleContext bc = context;
 		coordinatorReference = bc.getServiceReference(Coordinator.class);
 		coordinator = bc.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertNotSecurityException(String bundle) throws Exception {
@@ -455,20 +506,20 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	}
 	
 	private void execute(String bundle, boolean hasPermission) throws Exception {
-		Bundle b = install(bundle);
-		BundleContext bc = getContext();
+		Bundle b = installer.installBundle(bundle, false);
+		BundleContext bc = context;
 		ServiceReference<TestClassResult> sr = null;
 		try {
 			b.start();
 			sr = bc.getServiceReference(TestClassResult.class);
-			assertNotNull("The test bundle did not register a result.", sr);
+			assertThat(sr).as("The test bundle did not register a result.").isNotNull();
 			TestClassResult tr = bc.getService(sr);
 			bc.ungetService(sr);
 			b.uninstall();
 			if (hasPermission)
-				assertTrue("A SecurityException should not have been thrown.", tr.succeeded());
+				assertThat(tr.succeeded()).as("A SecurityException should not have been thrown.").isTrue();
 			else
-				assertTrue("A SecurityException should have been thrown.", tr.succeeded());
+				assertThat(tr.succeeded()).as("A SecurityException should have been thrown.").isTrue();
 		}
 		finally {
 			ungetQuietly(sr);
@@ -497,7 +548,7 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	
 	private void executeWithDirectCoordination(String bundle, boolean hasPermission, long timeout) throws Exception {
 		Coordination c = coordinator.create("c", timeout);
-		BundleContext bc = getContext();
+		BundleContext bc = context;
 		ServiceRegistration<Coordination> sr = bc.registerService(
 				Coordination.class, c, null);
 		try {
@@ -510,14 +561,14 @@ public class CoordinatorSecureTests extends OSGiTestCase {
 	
 	private void executeWithThreadCoordination(String bundle, boolean hasPermission, long timeout) throws Exception {
 		Coordination c = coordinator.begin("c", timeout);
-		assertEquals("The coordination was not at the top of the stack.", c, coordinator.peek());
+		assertThat(coordinator.peek()).as("The coordination was not at the top of the stack.").isEqualTo(c);
 		executeWithCoordination(bundle, hasPermission, timeout, c);
 	}
 	
 	private void ungetQuietly(ServiceReference<TestClassResult> sr) {
 		if (sr == null) return;
 		try {
-			getContext().ungetService(sr);
+			context.ungetService(sr);
 		}
 		catch (Exception e) {
 			// ignore

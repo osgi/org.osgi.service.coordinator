@@ -19,10 +19,10 @@ package org.osgi.test.cases.coordinator.junit;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 
-import junit.framework.AssertionFailedError;
 
 /**
  * Coordinations can only be removed from the thread local stack by calling the
@@ -35,6 +35,7 @@ public class RemoveEndedCoordFromStackTest extends CoordinatorTest {
 	 * A basic test for the removal of a coordination from the thread local
 	 * stack when ended.
 	 */
+	@Test
 	public void testRemovalBasic() {
 		Coordination c = coordinator.begin("c", 0);
 		assertAtTopOfStack(c);
@@ -49,6 +50,7 @@ public class RemoveEndedCoordFromStackTest extends CoordinatorTest {
 	 * that pushed it to the stack
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testWrongThreadBasic() throws InterruptedException {
 		final Coordination c = coordinator.create("c", 0);
 		final AtomicReference<CoordinationException> e = new AtomicReference<CoordinationException>();
@@ -71,7 +73,7 @@ public class RemoveEndedCoordFromStackTest extends CoordinatorTest {
 			assertAtTopOfStack(c);
 			c.end();
 		}
-		catch (AssertionFailedError afe) {
+		catch (AssertionError afe) {
 			try {
 				c.end();
 			}

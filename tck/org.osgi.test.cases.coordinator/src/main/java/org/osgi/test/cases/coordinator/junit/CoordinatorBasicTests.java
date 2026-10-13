@@ -17,6 +17,9 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
@@ -38,9 +42,7 @@ import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Coordinator;
 import org.osgi.service.coordinator.Participant;
-import org.osgi.test.support.sleep.Sleep;
 
-import junit.framework.AssertionFailedError;
 
 /**
  * Basic Coordinator test case.
@@ -52,49 +54,48 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testOverallTimeout() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		{
 			Coordination cc = c.begin("timeout-1", 0);
 			cc.extendTimeout(100);
-			Sleep.sleep(500);
-			assertFalse(
-					"must not have timed out because it did not have a timeout to begin with",
-					cc.isTerminated());
-			assertEquals(null, cc.getFailure());
+			Thread.sleep(500);
+			assertThat(cc.isTerminated()).as("must not have timed out because it did not have a timeout to begin with").isFalse();
+			assertThat(cc.getFailure()).isNull();
 		}
 
 		{
 			Coordination cc = c.begin("timeout-2", 100);
 			cc.join(0);
-			assertTrue(cc.isTerminated());
+			assertThat(cc.isTerminated()).isTrue();
 		}
 		Thread.interrupted(); // clear flag
 		{
 			int granularity = 1000;
 			Coordination cc = c.begin("timeout-3", 2 * granularity);
 			cc.extendTimeout(2 * granularity); // expires before primary
-			Sleep.sleep(granularity);
-			assertFalse("must not have timed out yet", cc.isTerminated());
-			Sleep.sleep(2 * granularity); // expires after primary but before
+			Thread.sleep(granularity);
+			assertThat(cc.isTerminated()).as("must not have timed out yet").isFalse();
+			Thread.sleep(2 * granularity); // expires after primary but before
 											// extended
-			assertFalse("must not have timed out yet because we extended", cc
-					.isTerminated());
+			assertThat(cc
+					.isTerminated()).as("must not have timed out yet because we extended").isFalse();
 			try {
 				cc.join(10 * granularity);
 			}
 			catch (InterruptedException ie) {
 				// The spec no longer requires an implementation to
 				// interrupt the thread a coordination is associated with
-				// if other than the one that called the fail() method.
+				// if other than the one that called the fail("") method.
 				// However, it doesn't prohibit it either, so ignore the
 				// exception.
 			}
-			assertTrue("now it must be terminated", cc.isTerminated());
-			assertEquals(Coordination.TIMEOUT, cc.getFailure());
+			assertThat(cc.isTerminated()).as("now it must be terminated").isTrue();
+			assertThat(cc.getFailure()).isEqualTo(Coordination.TIMEOUT);
 		}
 
 	}
@@ -121,9 +122,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	/**
 	 * @throws Exception
 	 */
+	@Test
 	public void testVariables() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination cc1 = c.create("variable-1", 0);
@@ -133,10 +135,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		cc1.addParticipant(vp);
 		cc1.end();
 
-		assertEquals(vp.value, "hello");
-		assertEquals(1, vp.ended.get());
-		assertEquals(0, vp.failed.get());
-		assertEquals(cc1.getVariables().get(VariableParticipant.class), "hello");
+		assertThat("hello").isEqualTo(vp.value);
+		assertThat(vp.ended.get()).isOne();
+		assertThat(vp.failed.get()).isZero();
+		assertThat("hello").isEqualTo(cc1.getVariables().get(VariableParticipant.class));
 
 		Coordination cc2 = c.create("variable-2", 0);
 		Map<Class< ? >, Object> map2 = cc2.getVariables();
@@ -145,14 +147,13 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		cc2.addParticipant(vp);
 		cc2.fail(new Exception());
 
-		assertEquals(vp.value, "goodbye");
-		assertEquals(0, vp.ended.get());
-		assertEquals(1, vp.failed.get());
-		assertEquals(cc1.getVariables().get(VariableParticipant.class), "hello");
-		assertEquals(cc2.getVariables().get(VariableParticipant.class),
-				"goodbye");
+		assertThat("goodbye").isEqualTo(vp.value);
+		assertThat(vp.ended.get()).isZero();
+		assertThat(vp.failed.get()).isOne();
+		assertThat("hello").isEqualTo(cc1.getVariables().get(VariableParticipant.class));
+		assertThat("goodbye").isEqualTo(cc2.getVariables().get(VariableParticipant.class));
 
-		assertTrue(cc1.getVariables() != cc2.getVariables());
+		assertThat(cc1.getVariables()).isNotSameAs(cc2.getVariables());
 	}
 
 	/**
@@ -161,30 +162,30 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testStack() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination cc = c.create("stack-1", 0);
-		assertEquals(cc, cc.push());
+		assertThat(cc.push()).isEqualTo(cc);
 
 		try {
 			cc.push();
 			fail("expected an error because we're already pushed");
 		}
 		catch (CoordinationException ce) {
-			assertEquals("Must be already pushed error",
-					CoordinationException.ALREADY_PUSHED, ce.getType());
+			assertThat(ce.getType()).as("Must be already pushed error").isEqualTo(CoordinationException.ALREADY_PUSHED);
 		}
 
-		assertEquals(cc, c.pop());
-		assertEquals(cc, cc.push());
+		assertThat(c.pop()).isEqualTo(cc);
+		assertThat(cc.push()).isEqualTo(cc);
 
 		cc.end(); // terminate it
 
-		assertTrue(cc.isTerminated());
-		assertNull("nothing on stack anymore", c.pop());
+		assertThat(cc.isTerminated()).isTrue();
+		assertThat(c.pop()).as("nothing on stack anymore").isNull();
 
 		Coordination c1 = c.begin("stack-1", 0);
 		Coordination c2 = c.begin("stack-2", 0);
@@ -192,21 +193,21 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		Coordination c4 = c.begin("stack-4", 0);
 
 		c2.end();
-		assertTrue(c3.isTerminated());
-		assertTrue(c4.isTerminated());
+		assertThat(c3.isTerminated()).isTrue();
+		assertThat(c4.isTerminated()).isTrue();
 
-		assertEquals(c1, c.pop());
+		assertThat(c.pop()).isEqualTo(c1);
 
 		try {
 			c2.push();
 			fail("must throw an exception");
 		}
 		catch (CoordinationException e) {
-			assertEquals(CoordinationException.ALREADY_ENDED, e.getType());
+			assertThat(e.getType()).isEqualTo(CoordinationException.ALREADY_ENDED);
 		}
 
 		cc = c.begin("pushed", 0);
-		assertEquals(cc, c.pop());
+		assertThat(c.pop()).isEqualTo(cc);
 	}
 
 	/**
@@ -236,34 +237,31 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	/**
 	 * @throws Exception
 	 */
+	@Test
 	public void testTerminatedInCallbacks() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination cc = c.create("termination-1", 0);
 		Checking bp = new Checking();
 		cc.addParticipant(bp);
-		assertFalse("initialized to false ", bp.terminated);
+		assertThat(bp.terminated).as("initialized to false ").isFalse();
 		cc.end();
-		assertTrue("must  be terminated in callback ", bp.terminated);
-		assertFalse(
-				"result of failure is expected to be false because it was already terminated ",
-				bp.result);
-		assertEquals("ended called ", 1, bp.ended.get());
-		assertEquals("failed called ", 0, bp.failed.get());
+		assertThat(bp.terminated).as("must  be terminated in callback ").isTrue();
+		assertThat(bp.result).as("result of failure is expected to be false because it was already terminated ").isFalse();
+		assertThat(bp.ended.get()).as("ended called ").isOne();
+		assertThat(bp.failed.get()).as("failed called ").isZero();
 
 		cc = c.create("termination-2", 0);
 		bp = new Checking();
 		cc.addParticipant(bp);
-		assertFalse("initialized to false ", bp.terminated);
+		assertThat(bp.terminated).as("initialized to false ").isFalse();
 		cc.fail(new IllegalStateException());
-		assertTrue("must  be terminated in callback ", bp.terminated);
-		assertFalse(
-				"result of failure is expected to be false because it was already terminated ",
-				bp.result);
-		assertEquals("ended called ", 0, bp.ended.get());
-		assertEquals("failed called ", 1, bp.failed.get());
+		assertThat(bp.terminated).as("must  be terminated in callback ").isTrue();
+		assertThat(bp.result).as("result of failure is expected to be false because it was already terminated ").isFalse();
+		assertThat(bp.ended.get()).as("ended called ").isZero();
+		assertThat(bp.failed.get()).as("failed called ").isOne();
 
 	}
 
@@ -276,15 +274,16 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws BundleException
 	 */
 
+	@Test
 	public void testUngotten() throws BundleException, IOException {
-		BundleContext context = getContext();
+		BundleContext context = this.context;
 
 		// Ensure no outstanding references
 		ServiceReference<Coordinator> ref = context.getServiceReference(Coordinator.class);
 		while (context.ungetService(ref));
 
 		// Get another Bundle Context
-		Bundle other = install("dummy.jar");
+		Bundle other = installer.installBundle("dummy.jar", false);
 		other.start();
 
 		BundleContext otherContext = other.getBundleContext();
@@ -294,9 +293,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		// Get the different Coordinators
 		Coordinator cUs = context.getService(ref);
 		Coordinator cThem = otherContext.getService(ref);
-		assertTrue(
-				"Because they're registered with a service factory they must differ",
-				cUs != cThem);
+		assertThat(cUs != cThem).as("Because they're registered with a service factory they must differ").isTrue();
 
 		// Create a bunch of Coordinations
 		Coordination ccUs1 = cUs.create("lifecyle-us-1", 0);
@@ -306,46 +303,46 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		Coordination ccThem2 = cThem.create("lifecyle-them-2", 0);
 
 		// Check if we have the same view and all are visible
-		assertEquals("Must have 4 coordinations now from us", 4, cUs
-				.getCoordinations().size());
-		assertEquals("Must have 4 coordinations now from them", 4, cThem
-				.getCoordinations().size());
+		assertThat(cUs
+				.getCoordinations()).as("Must have 4 coordinations now from us").hasSize(4);
+		assertThat(cThem
+				.getCoordinations()).as("Must have 4 coordinations now from them").hasSize(4);
 
 		// Unget their service
 		while (otherContext.ungetService(ref));
 
-		assertEquals("Must have 2 coordinations now after they are gone", 2,
-				cUs.getCoordinations().size());
+		assertThat(cUs.getCoordinations()).as("Must have 2 coordinations now after they are gone").hasSize(2);
 
 		// Check their coordinations are properly terminated
-		assertTrue(ccThem1.isTerminated());
+		assertThat(ccThem1.isTerminated()).isTrue();
 		// Coordinations that are failed due to a bundle releasing the
 		// Coordinator service must have Coordination.RELEASED as the failure
 		// cause.
 		Exception e = (Exception)ccThem1.getFailure();
-		assertTrue("The failure cause should have been Coordination.RELEASED", e == Coordination.RELEASED);
+		assertThat(e == Coordination.RELEASED).as("The failure cause should have been Coordination.RELEASED").isTrue();
 
-		assertTrue(ccThem2.isTerminated());
+		assertThat(ccThem2.isTerminated()).isTrue();
 
 		// And that should not have affected us
-		assertFalse(ccUs1.isTerminated());
-		assertFalse(ccUs2.isTerminated());
+		assertThat(ccUs1.isTerminated()).isFalse();
+		assertThat(ccUs2.isTerminated()).isFalse();
 
 		// Unget our service
 		while (context.ungetService(ref));
 
 		// now ours should also be gone
-		assertTrue(ccUs1.isTerminated());
-		assertTrue(ccUs2.isTerminated());
+		assertThat(ccUs1.isTerminated()).isTrue();
+		assertThat(ccUs2.isTerminated()).isTrue();
 	}
 
 	/**
 	 * Timeout
 	 * @throws Exception
 	 */
+	@Test
 	public void testTableTimeout() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination cc = c.begin("table-timeout-active", 100);
@@ -355,11 +352,11 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		catch (InterruptedException e) {
 			// The spec no longer requires an implementation to
 			// interrupt the thread a coordination is associated with
-			// if other than the one that called the fail() method.
+			// if other than the one that called the fail("") method.
 			// However, it doesn't prohibit it either, so ignore the
 			// exception.
 		}
-		assertTrue(cc.isTerminated());
+		assertThat(cc.isTerminated()).isTrue();
 	}
 
 	/**
@@ -367,29 +364,30 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testTableFail() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		// ACTIVE, must return true no exception
 		{
 			Coordination cc = c.create("table-addParticipant-no-exception", 0);
-			assertTrue(cc.fail(new Exception()));
+			assertThat(cc.fail(new Exception())).isTrue();
 		}
 
 		// END, must return false no exception
 		{
 			Coordination cc = c.create("table-addParticipant-no-exception", 0);
 			cc.end();
-			assertFalse(cc.fail(new Exception()));
+			assertThat(cc.fail(new Exception())).isFalse();
 		}
 
 		// FALSE, must return false no exception
 		{
 			Coordination cc = c.create("table-addParticipant-no-exception", 0);
 			cc.fail(new Exception());
-			assertFalse(cc.fail(new Exception()));
+			assertThat(cc.fail(new Exception())).isFalse();
 		}
 
 	}
@@ -398,9 +396,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * Table showing exceptions for the addParticipant method.
 	 * @throws Exception
 	 */
+	@Test
 	public void testTableAddParticipant() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		// NONE in ACTIVE state
@@ -419,8 +418,8 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				cc2.addParticipant(tp);
 			}
 			catch (CoordinationException e) {
-				assertEquals(CoordinationException.DEADLOCK_DETECTED, e
-						.getType());
+				assertThat(e
+						.getType()).isEqualTo(CoordinationException.DEADLOCK_DETECTED);
 			}
 		}
 		// LOCK_INTERRUPTED
@@ -437,11 +436,11 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 								"table-addParticipant-deadlock-1", 0);
 						cc1.addParticipant(tp);
 						try {
-							Sleep.sleep(200);
+							Thread.sleep(200);
 							System.out.println("Will interrupt thread "
 									+ cc2.getThread());
 							cc2.getThread().interrupt();
-							Sleep.sleep(100);
+							Thread.sleep(100);
 							cc1.end();
 						}
 						catch (InterruptedException e) {
@@ -454,14 +453,14 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				}
 			};
 			t1.start();
-			Sleep.sleep(100);
+			Thread.sleep(100);
 
 			try {
 				cc2.addParticipant(tp); // will block
 			}
 			catch (CoordinationException e) {
-				assertEquals(CoordinationException.LOCK_INTERRUPTED, e
-						.getType());
+				assertThat(e
+						.getType()).isEqualTo(CoordinationException.LOCK_INTERRUPTED);
 			}
 
 			t1.join();
@@ -475,7 +474,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			fail("Must throw ALREADY_ENDED");
 		}
 		catch (CoordinationException e) {
-			assertEquals(CoordinationException.ALREADY_ENDED, e.getType());
+			assertThat(e.getType()).isEqualTo(CoordinationException.ALREADY_ENDED);
 		}
 
 		// FAILED in FAILED state
@@ -487,8 +486,8 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			cc.addParticipant(new TestParticipant());
 		}
 		catch (CoordinationException e) {
-			assertEquals(CoordinationException.FAILED, e.getType());
-			assertEquals(localFailure, e.getCause());
+			assertThat(e.getType()).isEqualTo(CoordinationException.FAILED);
+			assertThat(e.getCause()).isEqualTo(localFailure);
 		}
 
 	}
@@ -498,9 +497,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testTableEnd() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		// end method
@@ -524,7 +524,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			cc.end();
 		}
 		catch (CoordinationException ce) {
-			assertEquals(CoordinationException.PARTIALLY_ENDED, ce.getType());
+			assertThat(ce.getType()).isEqualTo(CoordinationException.PARTIALLY_ENDED);
 		}
 
 		cc = c.create("table-end-already-ended", 0);
@@ -533,7 +533,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			cc.end();
 		}
 		catch (CoordinationException ce) {
-			assertEquals(CoordinationException.ALREADY_ENDED, ce.getType());
+			assertThat(ce.getType()).isEqualTo(CoordinationException.ALREADY_ENDED);
 		}
 
 		cc = c.create("table-end-failed", 0);
@@ -542,7 +542,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			cc.end();
 		}
 		catch (CoordinationException ce) {
-			assertEquals(CoordinationException.FAILED, ce.getType());
+			assertThat(ce.getType()).isEqualTo(CoordinationException.FAILED);
 		}
 	}
 
@@ -550,9 +550,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * CO0021 – All coordinations can be passed as parameters in method call
 	 * @throws Exception
 	 */
+	@Test
 	public void testPassAsArgument() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Vector<BigInteger> queue = new Vector<BigInteger>();
@@ -564,7 +565,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		finally {
 			cc.end();
 		}
-		assertEquals(10 * 100, queue.size());
+		assertThat(queue).hasSize(10 * 100);
 	}
 
 	class ThreadParticipant extends Thread implements Participant {
@@ -598,9 +599,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * is for trouble shooting
 	 * @throws Exception
 	 */
+	@Test
 	public void testFailInfo() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination c1 = c.begin("CO0017", 0);
@@ -615,8 +617,8 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				c1.end(); // throws an exception
 			}
 			catch (CoordinationException e) {
-				assertEquals(CoordinationException.FAILED, e.getType());
-				assertTrue(e.getCause().getClass() == IllegalArgumentException.class);
+				assertThat(e.getType()).isEqualTo(CoordinationException.FAILED);
+				assertThat(e.getCause().getClass()).isSameAs(IllegalArgumentException.class);
 			}
 		}
 	}
@@ -628,9 +630,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * purposes
 	 * @throws Exception
 	 */
+	@Test
 	public void testId() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination c1 = c.begin("CO0015", 0);
@@ -639,30 +642,30 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		Coordination c4 = c.begin("CO0015-2", 0);
 
 		// Check for duplicate names
-		assertEquals("CO0015", c1.getName());
-		assertEquals("CO0015", c2.getName());
+		assertThat(c1.getName()).isEqualTo("CO0015");
+		assertThat(c2.getName()).isEqualTo("CO0015");
 
 		// Some extra
-		assertEquals("CO0015-1", c3.getName());
-		assertEquals("CO0015-2", c4.getName());
+		assertThat(c3.getName()).isEqualTo("CO0015-1");
+		assertThat(c4.getName()).isEqualTo("CO0015-2");
 
 		// Monotonically increasing
-		assertTrue(c1.getId() >= 0);
-		assertTrue(c1.getId() < c2.getId());
-		assertTrue(c2.getId() < c3.getId());
-		assertTrue(c3.getId() < c4.getId());
+		assertThat(c1.getId()).isGreaterThanOrEqualTo(0);
+		assertThat(c1.getId()).isLessThan(c2.getId());
+		assertThat(c2.getId()).isLessThan(c3.getId());
+		assertThat(c3.getId()).isLessThan(c4.getId());
 
 		// Findable by ID
-		assertEquals(c1, c.getCoordination(c1.getId()));
-		assertEquals(c2, c.getCoordination(c2.getId()));
-		assertEquals(c3, c.getCoordination(c3.getId()));
-		assertEquals(c4, c.getCoordination(c4.getId()));
+		assertThat(c.getCoordination(c1.getId())).isEqualTo(c1);
+		assertThat(c.getCoordination(c2.getId())).isEqualTo(c2);
+		assertThat(c.getCoordination(c3.getId())).isEqualTo(c3);
+		assertThat(c.getCoordination(c4.getId())).isEqualTo(c4);
 
 		// Remove c4, then try to find it
 		// and test calling of name/id for a terminated Coordination
 		c4.end();
-		assertNull(c.getCoordination(c4.getId()));
-		assertEquals("CO0015-2", c4.getName());
+		assertThat(c.getCoordination(c4.getId())).isNull();
+		assertThat(c4.getName()).isEqualTo("CO0015-2");
 	}
 
 	/**
@@ -671,9 +674,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testFailCoordinationFromNoninitiatingThread() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		final Semaphore s = new Semaphore(0);
@@ -690,7 +694,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				catch (InterruptedException e) {
 					// The spec no longer requires an implementation to
 					// interrupt the thread a coordination is associated with
-					// if other than the one that called the fail() method.
+					// if other than the one that called the fail("") method.
 					// However, it doesn't prohibit it either, so ignore the
 					// exception.
 				}
@@ -705,8 +709,8 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		coord.get().fail(e);
 		s.acquire(1);
 
-		assertTrue(coord.get().isTerminated());
-		assertTrue(coord.get().getFailure() == e);
+		assertThat(coord.get().isTerminated()).isTrue();
+		assertThat(coord.get().getFailure()).isSameAs(e);
 	}
 
 	void clear(Coordinator c) {
@@ -714,7 +718,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 
 		for (Coordination cc : c.getCoordinations())
 			cc.fail(new Exception());
-		assertEquals(0, c.getCoordinations().size());
+		assertThat(c.getCoordinations()).hasSize(0);
 	}
 
 	/**
@@ -722,9 +726,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testEnumerateCoordinations() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		clear(c);
 
 		Coordination c1 = c.begin("co0012-1", 0);
@@ -732,44 +737,44 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		Coordination c3 = c.create("co0012-3", 0);
 		Coordination c4 = c.create("co0012-4", 0);
 
-		assertEquals(c2, c.peek());
+		assertThat(c.peek()).isEqualTo(c2);
 
 		List<Coordination> cl = new ArrayList<Coordination>(Arrays.asList(c1,
 				c2, c3, c4));
-		assertEquals(4, c.getCoordinations().size());
+		assertThat(c.getCoordinations().size()).isEqualTo(4);
 		cl.removeAll(c.getCoordinations());
-		assertTrue(cl.isEmpty());
+		assertThat(cl.isEmpty()).isTrue();
 
 		Collection< ? extends Coordination> initial = c.getCoordinations();
 
 		c3.end();
-		assertEquals(4, initial.size());
-		assertEquals(3, c.getCoordinations().size());
+		assertThat(initial.size()).isEqualTo(4);
+		assertThat(c.getCoordinations().size()).isEqualTo(3);
 
 		cl = new ArrayList<Coordination>(Arrays.asList(c1, c2, c4));
 		cl.removeAll(c.getCoordinations());
-		assertTrue(cl.isEmpty());
+		assertThat(cl.isEmpty()).isTrue();
 
 		c2.end();
 		c1.end();
 		c4.end();
-		assertEquals(0, c.getCoordinations().size());
-		assertEquals(4, initial.size());
+		assertThat(c.getCoordinations()).hasSize(0);
+		assertThat(initial.size()).isEqualTo(4);
 
 		for (Coordination x : initial) {
-			assertTrue(x.isTerminated());
+			assertThat(x.isTerminated()).isTrue();
 		}
 
 		try {
 			initial.add(null);
-			assertEquals("Must be mutable", 5, initial.size());
+			assertThat(initial.size()).as("Must be mutable").isEqualTo(5);
 		}
 		catch (Exception e) {
 			fail("Must be mutable");
 		}
 		try {
 			initial.remove(null);
-			assertEquals("Must be mutable", 4, initial.size());
+			assertThat(initial.size()).as("Must be mutable").isEqualTo(4);
 
 		}
 		catch (Exception e) {
@@ -783,9 +788,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testPartiallyEnded() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp1 = new TestParticipant();
 		TestParticipant tp2 = new TestParticipant() {
 			public void ended(Coordination x) throws Exception {
@@ -795,7 +801,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		};
 
 		Coordination c1 = c.begin("co0012", 0);
-		assertEquals(c1, c.peek());
+		assertThat(c.peek()).isEqualTo(c1);
 		try {
 			c1.addParticipant(tp1);
 			c1.addParticipant(tp2);
@@ -806,14 +812,14 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				fail("Expected a PARTIALLY ENDED exception!");
 			}
 			catch (CoordinationException e) {
-				assertEquals(CoordinationException.PARTIALLY_ENDED, e
-						.getType());
-				assertEquals(1, tp1.ended.get());
-				assertEquals(0, tp1.failed.get());
-				assertEquals(1, tp2.ended.get());
-				assertEquals(0, tp2.failed.get());
+				assertThat(e
+						.getType()).isEqualTo(CoordinationException.PARTIALLY_ENDED);
+				assertThat(tp1.ended.get()).isOne();
+				assertThat(tp1.failed.get()).isZero();
+				assertThat(tp2.ended.get()).isOne();
+				assertThat(tp2.failed.get()).isZero();
 			}
-			assertTrue(c1.isTerminated());
+			assertThat(c1.isTerminated()).isTrue();
 		}
 	}
 
@@ -824,55 +830,56 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * This is the OK case
 	 * @throws Exception
 	 */
+	@Test
 	public void testNestingOk() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp1 = new TestParticipant();
 		TestParticipant tp2 = new TestParticipant();
 		Coordination c1 = c.begin("co0011-1", 0);
 		try {
 			c1.addParticipant(tp1);
-			assertEquals(c1, c.peek());
+			assertThat(c.peek()).isEqualTo(c1);
 
 			Coordination c2 = c.begin("co0011-2", 0);
-			assertEquals(c2, c.peek());
-			assertFalse(c1.isTerminated());
-			assertFalse(c2.isTerminated());
-			assertEquals(0, tp1.ended.get());
-			assertEquals(0, tp1.failed.get());
+			assertThat(c.peek()).isEqualTo(c2);
+			assertThat(c1.isTerminated()).isFalse();
+			assertThat(c2.isTerminated()).isFalse();
+			assertThat(tp1.ended.get()).isZero();
+			assertThat(tp1.failed.get()).isZero();
 
-			assertEquals(c2, c.pop());
-			assertEquals(c1, c.peek());
+			assertThat(c.pop()).isEqualTo(c2);
+			assertThat(c.peek()).isEqualTo(c1);
 			c2.push();
-			assertEquals(c2, c.peek());
+			assertThat(c.peek()).isEqualTo(c2);
 
 			try {
 				c2.addParticipant(tp2);
-				assertFalse(c1.isTerminated());
-				assertFalse(c2.isTerminated());
-				assertEquals(0, tp1.ended.get());
-				assertEquals(0, tp1.failed.get());
-				assertEquals(0, tp2.ended.get());
-				assertEquals(0, tp2.failed.get());
+				assertThat(c1.isTerminated()).isFalse();
+				assertThat(c2.isTerminated()).isFalse();
+				assertThat(tp1.ended.get()).isZero();
+				assertThat(tp1.failed.get()).isZero();
+				assertThat(tp2.ended.get()).isZero();
+				assertThat(tp2.failed.get()).isZero();
 			}
 			finally {
 				c2.end();
-				assertFalse(c1.isTerminated());
-				assertTrue(c2.isTerminated());
-				assertEquals(0, tp1.ended.get());
-				assertEquals(0, tp1.failed.get());
-				assertEquals(1, tp2.ended.get());
-				assertEquals(0, tp2.failed.get());
+				assertThat(c1.isTerminated()).isFalse();
+				assertThat(c2.isTerminated()).isTrue();
+				assertThat(tp1.ended.get()).isZero();
+				assertThat(tp1.failed.get()).isZero();
+				assertThat(tp2.ended.get()).isOne();
+				assertThat(tp2.failed.get()).isZero();
 			}
 
 		}
 		finally {
 			c1.end();
-			assertTrue(c1.isTerminated());
-			assertEquals(1, tp1.ended.get());
-			assertEquals(0, tp1.failed.get());
-			assertEquals(1, tp2.ended.get());
-			assertEquals(0, tp2.failed.get());
+			assertThat(c1.isTerminated()).isTrue();
+			assertThat(tp1.ended.get()).isOne();
+			assertThat(tp1.failed.get()).isZero();
+			assertThat(tp2.ended.get()).isOne();
+			assertThat(tp2.failed.get()).isZero();
 		}
 	}
 
@@ -883,36 +890,37 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * This is the FAILURE case
 	 * @throws Exception
 	 */
+	@Test
 	public void testNestingInnerFails() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp1 = new TestParticipant();
 		TestParticipant tp2 = new TestParticipant();
 		Coordination c1 = c.begin("co0011-1", 0);
 		try {
 			c1.addParticipant(tp1);
-			assertEquals(c1, c.peek());
+			assertThat(c.peek()).isEqualTo(c1);
 
 			Coordination c2 = c.begin("co0011-2", 0);
-			assertEquals(c2, c.peek());
-			assertFalse(c1.isTerminated());
-			assertFalse(c2.isTerminated());
-			assertEquals(0, tp1.ended.get());
-			assertEquals(0, tp1.failed.get());
+			assertThat(c.peek()).isEqualTo(c2);
+			assertThat(c1.isTerminated()).isFalse();
+			assertThat(c2.isTerminated()).isFalse();
+			assertThat(tp1.ended.get()).isZero();
+			assertThat(tp1.failed.get()).isZero();
 
-			assertEquals(c2, c.pop());
-			assertEquals(c1, c.peek());
+			assertThat(c.pop()).isEqualTo(c2);
+			assertThat(c.peek()).isEqualTo(c1);
 			c2.push();
-			assertEquals(c2, c.peek());
+			assertThat(c.peek()).isEqualTo(c2);
 
 			try {
 				c2.addParticipant(tp2);
-				assertFalse(c1.isTerminated());
-				assertFalse(c2.isTerminated());
-				assertEquals(0, tp1.ended.get());
-				assertEquals(0, tp1.failed.get());
-				assertEquals(0, tp2.ended.get());
-				assertEquals(0, tp2.failed.get());
+				assertThat(c1.isTerminated()).isFalse();
+				assertThat(c2.isTerminated()).isFalse();
+				assertThat(tp1.ended.get()).isZero();
+				assertThat(tp1.failed.get()).isZero();
+				assertThat(tp2.ended.get()).isZero();
+				assertThat(tp2.failed.get()).isZero();
 				c2.fail(new Exception());
 			}
 			finally {
@@ -921,23 +929,23 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 					fail("expected c2 to throw an exception!");
 				}
 				catch (CoordinationException e) {
-					assertEquals(CoordinationException.FAILED, e.getType());
-					assertFalse(c1.isTerminated());
-					assertTrue(c2.isTerminated());
-					assertEquals(0, tp1.ended.get());
-					assertEquals(0, tp1.failed.get());
-					assertEquals(0, tp2.ended.get());
-					assertEquals(1, tp2.failed.get());
+					assertThat(e.getType()).isEqualTo(CoordinationException.FAILED);
+					assertThat(c1.isTerminated()).isFalse();
+					assertThat(c2.isTerminated()).isTrue();
+					assertThat(tp1.ended.get()).isZero();
+					assertThat(tp1.failed.get()).isZero();
+					assertThat(tp2.ended.get()).isZero();
+					assertThat(tp2.failed.get()).isOne();
 				}
 			}
 		}
 		finally {
 			c1.end();
-			assertTrue(c1.isTerminated());
-			assertEquals(1, tp1.ended.get());
-			assertEquals(0, tp1.failed.get());
-			assertEquals(0, tp2.ended.get());
-			assertEquals(1, tp2.failed.get());
+			assertThat(c1.isTerminated()).isTrue();
+			assertThat(tp1.ended.get()).isOne();
+			assertThat(tp1.failed.get()).isZero();
+			assertThat(tp2.ended.get()).isZero();
+			assertThat(tp2.failed.get()).isOne();
 		}
 	}
 
@@ -966,9 +974,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	/**
 	 * @throws Exception
 	 */
+	@Test
 	public void testPreventBlocking() throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 
 		final TestParticipant tp1 = new TestParticipant();
 
@@ -990,15 +999,15 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		};
 		t1.start();
 		t1.join(); // wait for t1 to finish, means not blocked
-		assertNull(throwable.get());
+		assertThat(throwable.get()).isNull();
 
 		c1.end(); // calls stuff on tp1,
-		assertEquals("after c1 terminated", 1, tp1.ended.get());
-		assertEquals("after c1 terminated", 0, tp1.failed.get());
+		assertThat(tp1.ended.get()).as("after c1 terminated").isOne();
+		assertThat(tp1.failed.get()).as("after c1 terminated").isZero();
 
 		c3.end(); // terminates, calling tp1 again on ended()
-		assertEquals("after c3 terminated", 2, tp1.ended.get());
-		assertEquals("after c3 terminated", 0, tp1.failed.get());
+		assertThat(tp1.ended.get()).as("after c3 terminated").isEqualTo(2);
+		assertThat(tp1.failed.get()).as("after c3 terminated").isZero();
 	}
 
 	/**
@@ -1010,10 +1019,11 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testNoParticipationOnTwoCoordinationsInTheSameThread()
 			throws Exception {
 		final Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 
 		final TestParticipant tp1 = new TestParticipant();
 
@@ -1028,10 +1038,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			fail("Excepted deadlock excepton");
 		}
 		catch (CoordinationException e) {
-			assertEquals(CoordinationException.DEADLOCK_DETECTED, e.getType());
-			assertTrue(c2.getParticipants().isEmpty());
+			assertThat(e.getType()).isEqualTo(CoordinationException.DEADLOCK_DETECTED);
+			assertThat(c2.getParticipants()).isEmpty();
 			c2.end();
-			assertEquals(c1, c.peek());
+			assertThat(c.peek()).isEqualTo(c1);
 		}
 
 		// Check if a timeout cancels the block
@@ -1049,9 +1059,9 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		};
 		t1.start();
 		t1.join();
-		assertNotNull(exception.get());
-		assertEquals(CoordinationException.FAILED, exception.get().getType());
-		assertEquals(Coordination.TIMEOUT, exception.get().getCause());
+		assertThat(exception.get()).isNotNull();
+		assertThat(exception.get().getType()).isEqualTo(CoordinationException.FAILED);
+		assertThat(exception.get().getCause()).isEqualTo(Coordination.TIMEOUT);
 
 		// Check if we block correctly
 		final AtomicReference<Throwable> throwable = new AtomicReference<Throwable>();
@@ -1067,28 +1077,29 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			}
 		};
 		t1.start();
-		Sleep.sleep(1000);
-		assertTrue(t1.isAlive()); // is blocked on addParticipant
+		Thread.sleep(1000);
+		assertThat(t1.isAlive()).isTrue(); // is blocked on addParticipant
 		c1.end(); // calls stuff on tp1, unblocks t1
 		t1.join(); // wait for t1 to finish, can only happen when unblocks
 
 		// c3 is still not terminated, so we have only one callback yet
-		assertEquals("after c1 terminated", 1, tp1.ended.get());
-		assertEquals("after c1 terminated", 0, tp1.failed.get());
-		assertNull(throwable.get());
+		assertThat(tp1.ended.get()).as("after c1 terminated").isOne();
+		assertThat(tp1.failed.get()).as("after c1 terminated").isZero();
+		assertThat(throwable.get()).isNull();
 
 		c3.end(); // terminates, calling tp1 again on ended()
-		assertEquals("after c3 terminated", 2, tp1.ended.get());
-		assertEquals("after c3 terminated", 0, tp1.failed.get());
+		assertThat(tp1.ended.get()).as("after c3 terminated").isEqualTo(2);
+		assertThat(tp1.failed.get()).as("after c3 terminated").isZero();
 	}
 
 	/**
 	 * CO0008 – It must be possible to enumerate the participants
 	 * @throws Exception
 	 */
+	@Test
 	public void testEnumerateParticipants() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 
 		TestParticipant tp1 = new TestParticipant();
 		TestParticipant tp2 = new TestParticipant();
@@ -1109,14 +1120,14 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			fail("No exception expected here " + e);
 		}
 		finally {
-			assertTrue("must not be terminated", !cc.isTerminated());
-			assertNull("no failure", cc.getFailure());
+			assertThat(!cc.isTerminated()).as("must not be terminated").isTrue();
+			assertThat(cc.getFailure()).as("no failure").isNull();
 			List< ? extends Participant> other = cc.getParticipants();
-			assertEquals(participants, other);
+			assertThat(other).isEqualTo(participants);
 			cc.end();
-			assertNull("no failure", cc.getFailure());
-			assertTrue(cc.isTerminated());
-			assertEquals(participants, other);
+			assertThat(cc.getFailure()).as("no failure").isNull();
+			assertThat(cc.isTerminated()).isTrue();
+			assertThat(other).isEqualTo(participants);
 
 			// Check if we can no longer add to the list
 			try {
@@ -1124,10 +1135,8 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				fail("Expected exception becasue we should no longer be able to add");
 			}
 			catch (CoordinationException e) {
-				assertEquals("Should not accept any more coordinatins",
-						CoordinationException.ALREADY_ENDED, e.getType());
-				assertEquals("Should not have sneaked in there", participants,
-						other);
+				assertThat(e.getType()).as("Should not accept any more coordinatins").isEqualTo(CoordinationException.ALREADY_ENDED);
+				assertThat(other).as("Should not have sneaked in there").isEqualTo(participants);
 			}
 		}
 	}
@@ -1158,7 +1167,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		}
 
 		public void ended(Coordination cc) throws Exception {
-			throw new AssertionFailedError("I did fail this coordination!!");
+			throw new AssertionError("I did fail this coordination!!");
 		}
 
 	}
@@ -1166,9 +1175,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	/**
 	 * @throws Exception
 	 */
+	@Test
 	public void testParticipantFailure() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		FailingParticipant tp1 = new FailingParticipant();
 
 		Coordination cc = c.begin("co0003", 0);
@@ -1181,17 +1191,16 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		}
 		finally {
 			try {
-				assertTrue("must be terminated", cc.isTerminated());
-				assertEquals("failure", failure, cc.getFailure());
-				assertEquals("Ended must be 0", 0, tp1.ended.get());
-				assertEquals("Failed must be 1", 1, tp1.failed.get());
+				assertThat(cc.isTerminated()).as("must be terminated").isTrue();
+				assertThat(cc.getFailure()).as("failure").isEqualTo(failure);
+				assertThat(tp1.ended.get()).as("Ended must be 0").isZero();
+				assertThat(tp1.failed.get()).as("Failed must be 1").isOne();
 				cc.end();
 				fail("End should throw a ConfigurationException FAILED");
 			}
 			catch (CoordinationException e) {
-				assertEquals("Must be FAILED", e.getType(),
-						CoordinationException.FAILED);
-				assertEquals("And our original failure", failure, e.getCause());
+				assertThat(CoordinationException.FAILED).as("Must be FAILED").isEqualTo(e.getType());
+				assertThat(e.getCause()).as("And our original failure").isEqualTo(failure);
 			}
 		}
 	}
@@ -1207,9 +1216,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * at termination
 	 * @throws Exception
 	 */
+	@Test
 	public void testControlOutcome() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp1 = new TestParticipant();
 
 		Exception failure1 = new Exception("failed");
@@ -1224,19 +1234,18 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		}
 		finally {
 			try {
-				assertTrue("must be terminated", cc.isTerminated());
-				assertEquals("failure", failure1, cc.getFailure());
-				assertEquals("Ended must be 0", 0, tp1.ended.get());
-				assertEquals("Failed must be 1", 1, tp1.failed.get());
+				assertThat(cc.isTerminated()).as("must be terminated").isTrue();
+				assertThat(cc.getFailure()).as("failure").isEqualTo(failure1);
+				assertThat(tp1.ended.get()).as("Ended must be 0").isZero();
+				assertThat(tp1.failed.get()).as("Failed must be 1").isOne();
 				cc.end();
 				fail("End should throw a ConfigurationException FAILED");
 			}
 			catch (CoordinationException e) {
-				assertEquals(e.getName(), "co0002");
-				assertEquals(cc.getId(), e.getId());
-				assertEquals("Must be FAILED", e.getType(),
-						CoordinationException.FAILED);
-				assertEquals("And our original failure", failure1, e.getCause());
+				assertThat("co0002").isEqualTo(e.getName());
+				assertThat(e.getId()).isEqualTo(cc.getId());
+				assertThat(CoordinationException.FAILED).as("Must be FAILED").isEqualTo(e.getType());
+				assertThat(e.getCause()).as("And our original failure").isEqualTo(failure1);
 			}
 		}
 
@@ -1248,9 +1257,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 * @throws Exception
 	 */
 
+	@Test
 	public void testCollaboration() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp1 = new TestParticipant();
 		TestParticipant tp2 = new TestParticipant();
 		TestParticipant tp3 = new TestParticipant();
@@ -1266,14 +1276,14 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		}
 		finally {
 			cc.end();
-			assertTrue("must be terminated", cc.isTerminated());
-			assertNull("no failure", cc.getFailure());
-			assertEquals("Ended must be 1", 1, tp1.ended.get());
-			assertEquals("Failed must be 0", 0, tp1.failed.get());
-			assertEquals("Ended must be 1", 1, tp2.ended.get());
-			assertEquals("Failed must be 0", 0, tp2.failed.get());
-			assertEquals("Ended must be 1", 1, tp3.ended.get());
-			assertEquals("Failed must be 0", 0, tp3.failed.get());
+			assertThat(cc.isTerminated()).as("must be terminated").isTrue();
+			assertThat(cc.getFailure()).as("no failure").isNull();
+			assertThat(tp1.ended.get()).as("Ended must be 1").isOne();
+			assertThat(tp1.failed.get()).as("Failed must be 0").isZero();
+			assertThat(tp2.ended.get()).as("Ended must be 1").isOne();
+			assertThat(tp2.failed.get()).as("Failed must be 0").isZero();
+			assertThat(tp3.ended.get()).as("Ended must be 1").isOne();
+			assertThat(tp3.failed.get()).as("Failed must be 0").isZero();
 		}
 
 	}
@@ -1295,33 +1305,31 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void testTimeout() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp = new TestParticipant();
 		Coordination cc = c.create("test1", 100); // timeout after 100 ms
 
 		try {
 			cc.addParticipant(tp);
-			Sleep.sleep(200);
+			Thread.sleep(200);
 		}
 		catch (Exception e) {
-			fail();
+			fail("");
 		}
 		finally {
 			try {
-				assertTrue("must be terminated", cc.isTerminated());
-				assertEquals("must have a timeout failure",
-						Coordination.TIMEOUT, cc.getFailure());
-				assertEquals("Ended must be 0", 0, tp.ended.get());
-				assertEquals("Failed must be 1", 1, tp.failed.get());
+				assertThat(cc.isTerminated()).as("must be terminated").isTrue();
+				assertThat(cc.getFailure()).as("must have a timeout failure").isEqualTo(Coordination.TIMEOUT);
+				assertThat(tp.ended.get()).as("Ended must be 0").isZero();
+				assertThat(tp.failed.get()).as("Failed must be 1").isOne();
 				cc.end();
 			}
 			catch (CoordinationException ce) {
-				assertEquals("except a failed ", CoordinationException.FAILED,
-						ce.getType());
-				assertEquals("except a timeout exception ",
-						Coordination.TIMEOUT, ce.getCause());
+				assertThat(ce.getType()).as("except a failed ").isEqualTo(CoordinationException.FAILED);
+				assertThat(ce.getCause()).as("except a timeout exception ").isEqualTo(Coordination.TIMEOUT);
 			}
 		}
 
@@ -1332,9 +1340,10 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 *
 	 * @throws Exception
 	 */
+	@Test
 	public void testBasic() throws Exception {
 		Coordinator c = coordinator;
-		assertNotNull("Expect the service to be there", c);
+		assertThat(c).as("Expect the service to be there").isNotNull();
 		TestParticipant tp = new TestParticipant();
 		Coordination cc = c.create("test1", 0);
 
@@ -1342,16 +1351,16 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			cc.addParticipant(tp);
 		}
 		catch (Exception e) {
-			fail();
+			fail("");
 		}
 		finally {
 			cc.end();
 		}
 
-		assertTrue("must be terminated", cc.isTerminated());
-		assertNull("must have no failure", cc.getFailure());
-		assertEquals("Ended must be 1", 1, tp.ended.get());
-		assertEquals("Failed must be 0", 0, tp.failed.get());
+		assertThat(cc.isTerminated()).as("must be terminated").isTrue();
+		assertThat(cc.getFailure()).as("must have no failure").isNull();
+		assertThat(tp.ended.get()).as("Ended must be 1").isOne();
+		assertThat(tp.failed.get()).as("Failed must be 0").isZero();
 	}
 
 	/**
@@ -1363,13 +1372,14 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 	 *     when the coordination will time out.
 	 * @throws Exception 
 	 */
+	@Test
 	public void testExtendTimeout() throws Exception {
 		Coordination c = coordinator.create("c", 0);
 		try {
 			// (2)
 			assertDeadline(0, 0, c);
 			// (1)
-			assertEquals("No extension should have occurred", 0, c.extendTimeout(5000));
+			assertThat(c.extendTimeout(5000)).as("No extension should have occurred").isZero();
 		}
 		finally {
 			assertEnd(c);
@@ -1380,7 +1390,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			// (2), (4)
 			assertDeadline(start, 3000, c);
 			// (3)
-			assertTrue("Wrong deadline", c.extendTimeout(2000) >= 5000);
+			assertThat(c.extendTimeout(2000) >= 5000).as("Wrong deadline").isTrue();
 			// (2), (4)
 			assertDeadline(start, 5000, c);
 			c.join(8000);

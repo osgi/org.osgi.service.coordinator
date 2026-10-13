@@ -17,18 +17,22 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Coordinator;
 import org.osgi.service.coordinator.Participant;
-import org.osgi.test.support.sleep.Sleep;
 
 /**
  * Implementations must detect orphaned coordinations (i.e. coordinations that
@@ -44,6 +48,7 @@ public class OrphanedCoordinationTest extends CoordinatorTest {
 	 * @throws InterruptedException
 	 * @throws BundleException
 	 */
+	@Test
 	public void testOrphanedCoordinationExplicit() throws InterruptedException, BundleException {
 		Coordination c = coordinator.create("c", 0);
 		long id = c.getId();
@@ -64,6 +69,7 @@ public class OrphanedCoordinationTest extends CoordinatorTest {
 	 * @throws InterruptedException
 	 * @throws BundleException
 	 */
+	@Test
 	public void testOrphanedCoordinationImplicit() throws InterruptedException, BundleException {
 		assertEmptyStack();
 		Coordination c = coordinator.begin("c", 0);
@@ -79,17 +85,19 @@ public class OrphanedCoordinationTest extends CoordinatorTest {
 		coordinatorBundle.stop();
 		assertOrphanedCoordination(p, id, name, bundle);
 		coordinatorBundle.start();
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 		assertEmptyStack();
 	}
 
-	protected void setUp() throws Exception {
+	@BeforeEach
+	public void setUp() throws Exception {
 		super.setUp();
 		coordinatorBundle = coordinatorReference.getBundle();
 	}
 
-	protected void tearDown() throws Exception {
+	@AfterEach
+	public void tearDown() throws Exception {
 		coordinatorBundle.start();
 		super.tearDown();
 	}
@@ -107,29 +115,29 @@ public class OrphanedCoordinationTest extends CoordinatorTest {
 	}
 
 	private static void assertOrphanedParticipant(OrphanedParticipant p) {
-		assertNotNull("Participant did not receive failed notification", p.getFailedCoordination());
+		assertThat(p.getFailedCoordination()).as("Participant did not receive failed notification").isNotNull();
 	}
 
 	private static void assertOrphanedFailure(Coordination c) {
 		Throwable failure = c.getFailure();
-		assertTrue("Failure must be ORPHANED or RELEASED", failure == Coordination.ORPHANED || failure == Coordination.RELEASED);
+		assertThat(failure == Coordination.ORPHANED || failure == Coordination.RELEASED).as("Failure must be ORPHANED or RELEASED").isTrue();
 	}
 
 	private static void assertId(long id, Coordination c) {
-		assertEquals("Wrong id", id, c.getId());
+		assertThat(c.getId()).as("Wrong id").isEqualTo(id);
 	}
 
 	private static void assertName(String name, Coordination c) {
-		assertEquals("Wrong name", name, c.getName());
+		assertThat(c.getName()).as("Wrong name").isEqualTo(name);
 	}
 
 	private static void assertBundle(Bundle b, Coordination c) {
-		assertEquals("Wrong bundle", b, c.getBundle());
+		assertThat(c.getBundle()).as("Wrong bundle").isEqualTo(b);
 	}
 
 	private static void assertReferenceEnqueued(Reference<?> reference) throws InterruptedException {
 		waitForEnqueue(reference);
-		assertTrue("Coordination was not garbage collected", reference.isEnqueued());
+		assertThat(reference.isEnqueued()).as("Coordination was not garbage collected").isTrue();
 	}
 
 	private static void waitForEnqueue(Reference<?> reference) throws InterruptedException {
@@ -141,7 +149,7 @@ public class OrphanedCoordinationTest extends CoordinatorTest {
 			System.gc();
 			if (reference.isEnqueued())
 				break;
-			Sleep.sleep(interval);
+			Thread.sleep(interval);
 		}
 	}
 

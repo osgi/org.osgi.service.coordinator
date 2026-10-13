@@ -17,6 +17,7 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 
@@ -32,6 +33,7 @@ public class KeepFailedCoordOnStackTest extends CoordinatorTest {
 	 * The basic test.
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testBasic() throws InterruptedException {
 		final Coordination c = coordinator.begin("c", 0);
 		assertAtTopOfStack(c);

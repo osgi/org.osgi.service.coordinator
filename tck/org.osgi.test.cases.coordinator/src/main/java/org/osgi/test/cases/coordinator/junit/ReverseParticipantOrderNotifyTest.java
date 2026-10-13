@@ -17,10 +17,13 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.Participant;
 
@@ -51,6 +54,7 @@ public class ReverseParticipantOrderNotifyTest extends CoordinatorTest {
 	 * Tests that participants are notified in reverse participation order when
 	 * ending a coordination.
 	 */
+	@Test
 	public void testReverseParticipantOrderNotifyEnded() {
 		List<Participant> before = new ArrayList<Participant>();
 		List<Participant> after = Collections.synchronizedList(new ArrayList<Participant>());
@@ -68,6 +72,7 @@ public class ReverseParticipantOrderNotifyTest extends CoordinatorTest {
 	 * Tests that participants are notified in reverse participation order when
 	 * failing a coordination.
 	 */
+	@Test
 	public void testReverseParticipantOrderNotifyFailed() {
 		List<Participant> before = new ArrayList<Participant>();
 		List<Participant> after = Collections.synchronizedList(new ArrayList<Participant>());
@@ -83,6 +88,6 @@ public class ReverseParticipantOrderNotifyTest extends CoordinatorTest {
 	
 	private void assertReverseParticipationOrder(List<Participant> before, List<Participant> after) {
 		Collections.reverse(before);
-		assertEquals("Not notified in reverse participation order", before, after);
+		assertThat(after).as("Not notified in reverse participation order").isEqualTo(before);
 	}
 }
