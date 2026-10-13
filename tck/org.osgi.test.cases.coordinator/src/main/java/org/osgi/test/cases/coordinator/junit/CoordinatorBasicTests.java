@@ -90,7 +90,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 			catch (InterruptedException ie) {
 				// The spec no longer requires an implementation to
 				// interrupt the thread a coordination is associated with
-				// if other than the one that called the fail("") method.
+				// if other than the one that called the fail() method.
 				// However, it doesn't prohibit it either, so ignore the
 				// exception.
 			}
@@ -352,7 +352,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 		catch (InterruptedException e) {
 			// The spec no longer requires an implementation to
 			// interrupt the thread a coordination is associated with
-			// if other than the one that called the fail("") method.
+			// if other than the one that called the fail() method.
 			// However, it doesn't prohibit it either, so ignore the
 			// exception.
 		}
@@ -694,7 +694,7 @@ public class CoordinatorBasicTests extends CoordinatorTest {
 				catch (InterruptedException e) {
 					// The spec no longer requires an implementation to
 					// interrupt the thread a coordination is associated with
-					// if other than the one that called the fail("") method.
+					// if other than the one that called the fail() method.
 					// However, it doesn't prohibit it either, so ignore the
 					// exception.
 				}
