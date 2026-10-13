@@ -17,8 +17,12 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Participant;
@@ -66,7 +70,7 @@ public class UnwindStackTest extends CoordinatorTest {
 		}
 		
 		private void assertTerminatedInStackOrder(Coordination c) {
-			assertEquals("The coordinations were not terminated in stack order", coords[i++], c);
+			assertThat(c).as("The coordinations were not terminated in stack order").isEqualTo(coords[i++]);
 		}
 	}
 	
@@ -99,6 +103,7 @@ public class UnwindStackTest extends CoordinatorTest {
 	 * Expected Result: All coordinations are terminated normally in stack
 	 * order. The thread local stack is empty.
 	 */
+	@Test
 	public void testUnwindFromBottom() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		assertAtTopOfStack(c1);
@@ -129,6 +134,7 @@ public class UnwindStackTest extends CoordinatorTest {
 	 * Expected Result: c3 and c2 are terminated normally in stack order. c1 is
 	 * not terminated. c1 is at the top of the thread local stack.
 	 */
+	@Test
 	public void testUnwindFromMiddle() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		assertAtTopOfStack(c1);
@@ -158,6 +164,7 @@ public class UnwindStackTest extends CoordinatorTest {
 	 * Expected Result: c3 is terminated normally. c2 and c1 are not
 	 * terminated. c2 is at the top of the thread local stack.
 	 */
+	@Test
 	public void testUnwindFromTop() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		assertAtTopOfStack(c1);
@@ -193,6 +200,7 @@ public class UnwindStackTest extends CoordinatorTest {
 	 * by c3) as the failure. c1 is terminated with CoordinationException.FAILED
 	 * (thrown by c2) as the failure. The thread local stack is empty.
 	 */
+	@Test
 	public void testUnwindFromBottomWithPartialEnding() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		assertAtTopOfStack(c1);
@@ -237,6 +245,7 @@ public class UnwindStackTest extends CoordinatorTest {
 	 * failure. c1 is not terminated and is at the top of the thread local
 	 * stack.
 	 */
+	@Test
 	public void testUnwindFromMiddleWithFailure() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		assertAtTopOfStack(c1);
@@ -268,14 +277,14 @@ public class UnwindStackTest extends CoordinatorTest {
 	}
 	
 	private void assertParticipatorCallbacks() {
-		assertEquals("The participant did not receive the required number of callbacks.", Participator.coords.length, Participator.i);
+		assertThat(Participator.i).as("The participant did not receive the required number of callbacks.").isEqualTo(Participator.coords.length);
 	}
 	
 	private void assertParticipatorEnds(int expected) {
-		assertEquals("The participant did not receive the required number of callbacks to ended", expected, Participator.ends.get());
+		assertThat(Participator.ends.get()).as("The participant did not receive the required number of callbacks to ended").isEqualTo(expected);
 	}
 	
 	private void assertParticipatorFails(int expected) {
-		assertEquals("The participant did not receive the required number of callbacks to failed", expected, Participator.fails.get());
+		assertThat(Participator.fails.get()).as("The participant did not receive the required number of callbacks to failed").isEqualTo(expected);
 	}
 }

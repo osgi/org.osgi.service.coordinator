@@ -17,22 +17,32 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.Coordinator;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
 
 /**
  * The thread associated with a coordination must be consistent with it being 
  * pushed to or popped from a thread local stack.
  */
-public class CoordThreadPushPopTest extends OSGiTestCase {
+public class CoordThreadPushPopTest {
+
+	@InjectBundleContext
+	BundleContext		context;
 	private Coordinator coordinator;
 	private ServiceReference<Coordinator> coordinatorReference;
 	
 	/**
 	 * Pushing a coordination.
 	 */
+	@Test
 	public void testPushCoordination() {
 		Coordination c = coordinator.create("c", 0);
 		assertCoordinationThreadSame(c, null);
@@ -46,6 +56,7 @@ public class CoordThreadPushPopTest extends OSGiTestCase {
 	/**
 	 * Beginning a coordination.
 	 */
+	@Test
 	public void testBeginCoordination() {
 		Coordination c = coordinator.begin("c", 0);
 		assertCoordinationThreadSame(c, Thread.currentThread());
@@ -54,16 +65,18 @@ public class CoordThreadPushPopTest extends OSGiTestCase {
 		c.end();
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertCoordinationThreadSame(Coordination c, Thread expected) {
-		assertSame("A coordination's thread must be consistent with push and pop", expected, c.getThread());
+		assertThat(c.getThread()).as("A coordination's thread must be consistent with push and pop").isSameAs(expected);
 	}
 }

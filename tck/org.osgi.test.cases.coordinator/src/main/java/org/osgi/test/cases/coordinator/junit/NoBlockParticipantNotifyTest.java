@@ -17,15 +17,21 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 import org.osgi.service.coordinator.Coordinator;
 import org.osgi.service.coordinator.Participant;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
 
 /**
  * A coordination must not block on subsequent calls to terminate while 
@@ -47,7 +53,10 @@ import org.osgi.test.support.OSGiTestCase;
  * coordination would already be terminated and all participants notified 
  * (i.e. blocking would be impossible).
  */
-public class NoBlockParticipantNotifyTest extends OSGiTestCase {
+public class NoBlockParticipantNotifyTest {
+
+	@InjectBundleContext
+	BundleContext		context;
 	Coordinator coordinator;
 	private ServiceReference<Coordinator> coordinatorReference;
 	
@@ -56,6 +65,7 @@ public class NoBlockParticipantNotifyTest extends OSGiTestCase {
 	 * Coordinator.fail(Throwable) followed by Coordination.end().
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testCoordinatorFail() throws InterruptedException {
 		final Semaphore lock = new Semaphore(0);
 		final AtomicReference<Coordination> coordination = new AtomicReference<Coordination>();
@@ -88,6 +98,7 @@ public class NoBlockParticipantNotifyTest extends OSGiTestCase {
 	 * Coordination.fail(Throwable) followed by Coordination.end().
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testCoordinationFail() throws InterruptedException {
 		final Semaphore lock = new Semaphore(0);
 		final AtomicReference<Coordination> coordination = new AtomicReference<Coordination>();
@@ -119,6 +130,7 @@ public class NoBlockParticipantNotifyTest extends OSGiTestCase {
 	 * Coordination.end() followed by Coordination.end().
 	 * @throws InterruptedException
 	 */
+	@Test
 	public void testCoordinationEnd() throws InterruptedException {
 		final Semaphore lock = new Semaphore(0);
 		final AtomicReference<Coordination> coordination = new AtomicReference<Coordination>();
@@ -145,17 +157,19 @@ public class NoBlockParticipantNotifyTest extends OSGiTestCase {
 		assertNotBlocked(thread2.get(), thread1);
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertNotBlocked(Thread t1, Thread t2) {
-		assertFalse("A coordination must not block on subsequent termination calls while notifying participants", t2.isAlive() || t1.isAlive());
+		assertThat(t2.isAlive() || t1.isAlive()).as("A coordination must not block on subsequent termination calls while notifying participants").isFalse();
 	}
 	
 	private static class BlockTestThread extends Thread {

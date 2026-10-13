@@ -17,6 +17,7 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import org.junit.jupiter.api.Test;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.CoordinationException;
 
@@ -29,6 +30,7 @@ public class EnclosingCoordinationTest extends CoordinatorTest {
 	/**
 	 * The basic test.
 	 */
+	@Test
 	public void testBasic() {
 		Coordination c1 = coordinator.begin("c1", 0);
 		// c1 is at the bottom of the stack.

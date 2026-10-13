@@ -17,22 +17,32 @@
  *******************************************************************************/
 package org.osgi.test.cases.coordinator.junit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.coordinator.Coordination;
 import org.osgi.service.coordinator.Coordinator;
-import org.osgi.test.support.OSGiTestCase;
+import org.osgi.test.common.annotation.InjectBundleContext;
 
 /**
  * A NullPointerException must be thrown if the reason specified for a 
  * coordination's failure is null.
  */
-public class NullFailureReasonTest extends OSGiTestCase {
+public class NullFailureReasonTest {
+
+	@InjectBundleContext
+	BundleContext		context;
 	private Coordinator coordinator;
 	private ServiceReference<Coordinator> coordinatorReference;
 	
 	/**
 	 * Coordination.fail(Throwable)
 	 */
+	@Test
 	public void testCoordinationFail() {
 		RuntimeException npe = null;
 		Coordination c = coordinator.create("c", 0);
@@ -49,6 +59,7 @@ public class NullFailureReasonTest extends OSGiTestCase {
 	/**
 	 * Coordinator.fail(Throwable)
 	 */
+	@Test
 	public void testCoordinatorFail() {
 		RuntimeException npe = null;
 		Coordination c = coordinator.begin("c", 0);
@@ -62,16 +73,18 @@ public class NullFailureReasonTest extends OSGiTestCase {
 		assertRuntimeException(npe);
 	}
 	
-	protected void setUp() throws Exception {
-		coordinatorReference = getContext().getServiceReference(Coordinator.class);
-		coordinator = getContext().getService(coordinatorReference);
+	@BeforeEach
+	public void setUp() throws Exception {
+		coordinatorReference = context.getServiceReference(Coordinator.class);
+		coordinator = context.getService(coordinatorReference);
 	}
 	
-	protected void tearDown() throws Exception {
-		getContext().ungetService(coordinatorReference);
+	@AfterEach
+	public void tearDown() throws Exception {
+		context.ungetService(coordinatorReference);
 	}
 	
 	private void assertRuntimeException(RuntimeException e) {
-		assertNotNull("An runtime exception must be thrown if the reason for failure is null", e);
+		assertThat(e).as("An runtime exception must be thrown if the reason for failure is null").isNotNull();
 	}
 }
